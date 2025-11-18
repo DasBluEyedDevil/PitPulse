@@ -5,9 +5,6 @@ import dotenv from 'dotenv';
 // IMPORTANT: This must be done BEFORE any other imports that use env vars
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
-  console.log('📄 Loaded .env file for development');
-} else {
-  console.log('🚀 Using production environment variables');
 }
 
 import express from 'express';
@@ -23,6 +20,7 @@ import eventRoutes from './routes/eventRoutes';
 import checkinRoutes from './routes/checkinRoutes';
 import Database from './config/database';
 import { ApiResponse } from './types';
+import logger, { logHttp, logInfo, logError } from './utils/logger';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,13 +58,11 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware (development only)
-if (process.env.NODE_ENV === 'development') {
-  app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    next();
-  });
-}
+// Request logging middleware
+app.use((req, res, next) => {
+  logHttp(`${req.method} ${req.path}`);
+  next();
+});
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -128,17 +124,18 @@ app.use('*', (req, res) => {
 
 // Global error handler - catches ALL errors including async
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  // Log error with stack trace in development
-  if (process.env.NODE_ENV === 'development') {
-    console.error('Unhandled error:', error);
-    console.error('Stack:', error.stack);
-  } else {
-    // In production, log only essential info (integrate with proper logger)
-    console.error(`Error: ${error.message} | Path: ${req.path} | Method: ${req.method}`);
-  }
-
   // Determine status code
   const statusCode = error.statusCode || error.status || 500;
+
+  // Log error with context
+  logError(`${error.message} | Path: ${req.path} | Method: ${req.method} | Status: ${statusCode}`, {
+    error: error.message,
+    stack: error.stack,
+    path: req.path,
+    method: req.method,
+    statusCode,
+    userId: (req as any).user?.id,
+  });
 
   // Build response
   const response: ApiResponse = {
@@ -162,47 +159,47 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 const startServer = async () => {
   try {
     // Log environment info (without exposing sensitive data)
-    console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
-    console.log('🔌 DATABASE_URL present:', !!process.env.DATABASE_URL);
-    console.log('🔌 DB_HOST present:', !!process.env.DB_HOST);
-    
+    logInfo(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logInfo(`DATABASE_URL present: ${!!process.env.DATABASE_URL}`);
+    logInfo(`DB_HOST present: ${!!process.env.DB_HOST}`);
+
     // Test database connection
     const db = Database.getInstance();
     const isDbHealthy = await db.healthCheck();
-    
+
     if (!isDbHealthy) {
-      console.error('Database connection failed. Please check your database configuration.');
+      logError('Database connection failed. Please check your database configuration.');
       process.exit(1);
     }
-    
-    console.log('✅ Database connection established');
-    
+
+    logInfo('Database connection established');
+
     app.listen(PORT, () => {
-      console.log(`🚀 PitPulse API Server running on port ${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-      
+      logInfo(`PitPulse API Server running on port ${PORT}`);
+      logInfo(`Health check: http://localhost:${PORT}/health`);
+      logInfo(`Environment: ${process.env.NODE_ENV || 'development'}`);
+
       if (process.env.NODE_ENV === 'development') {
-        console.log(`📖 API Documentation: http://localhost:${PORT}/`);
+        logInfo(`API Documentation: http://localhost:${PORT}/`);
       }
     });
-    
+
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logError('Failed to start server', { error });
     process.exit(1);
   }
 };
 
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully');
+  logInfo('SIGTERM received, shutting down gracefully');
   const db = Database.getInstance();
   await db.close();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down gracefully');
+  logInfo('SIGINT received, shutting down gracefully');
   const db = Database.getInstance();
   await db.close();
   process.exit(0);
@@ -210,12 +207,12 @@ process.on('SIGINT', async () => {
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  logError('Uncaught Exception', { error });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  logError('Unhandled Rejection', { reason, promise });
   process.exit(1);
 });
 
