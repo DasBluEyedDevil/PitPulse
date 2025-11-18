@@ -1,22 +1,53 @@
-/// API Configuration
+/// API Configuration with environment-based URL switching
+///
+/// To set environment:
+/// - Development: flutter run --dart-define=ENVIRONMENT=dev
+/// - Staging: flutter run --dart-define=ENVIRONMENT=staging
+/// - Production: flutter run (default) or --dart-define=ENVIRONMENT=prod
 class ApiConfig {
   ApiConfig._();
 
-  // Base URL - Production Railway backend
-  static const String baseUrl = 'https://pitpulsemobile-production.up.railway.app/api';
-  
+  // Environment detection
+  static const String _environment = String.fromEnvironment(
+    'ENVIRONMENT',
+    defaultValue: 'prod',
+  );
+
+  // Base URLs per environment
+  static const String _devBaseUrl = 'http://localhost:3000/api';
+  static const String _stagingBaseUrl = 'https://pitpulse-staging.railway.app/api';
+  static const String _prodBaseUrl = 'https://pitpulsemobile-production.up.railway.app/api';
+
+  // Get base URL based on environment
+  static String get baseUrl {
+    switch (_environment) {
+      case 'dev':
+        return _devBaseUrl;
+      case 'staging':
+        return _stagingBaseUrl;
+      case 'prod':
+      default:
+        return _prodBaseUrl;
+    }
+  }
+
+  // Environment helpers
+  static bool get isDev => _environment == 'dev';
+  static bool get isStaging => _environment == 'staging';
+  static bool get isProd => _environment == 'prod' || _environment.isEmpty;
+
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
   static const Duration sendTimeout = Duration(seconds: 30);
-  
+
   // Endpoints
   static const String auth = '/users';
   static const String venues = '/venues';
   static const String bands = '/bands';
   static const String reviews = '/reviews';
   static const String badges = '/badges';
-  
+
   // Storage Keys
   static const String tokenKey = 'auth_token';
   static const String userKey = 'user_data';

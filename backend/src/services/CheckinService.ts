@@ -189,8 +189,11 @@ export class CheckinService {
         `;
       } else if (filter === 'nearby') {
         // Get check-ins from venues within 40 miles of user's location
-        // This would require user's location - placeholder for now
-        whereClause = 'WHERE 1=1'; // TODO: Implement geolocation filter
+        // NOTE: This requires user location to be passed as parameters
+        // For now, returning all check-ins when user location is not available
+        // Future enhancement: Add lat/lng parameters and use PostGIS for geospatial queries:
+        // WHERE ST_DWithin(v.location::geography, ST_MakePoint($2, $3)::geography, 64374)
+        whereClause = 'WHERE 1=1';
       } else {
         // Global feed - all check-ins
         whereClause = 'WHERE 1=1';

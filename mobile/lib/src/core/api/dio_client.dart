@@ -48,18 +48,20 @@ class DioClient {
       ),
     );
 
-    // Add logging interceptor in debug mode
-    _dio.interceptors.add(
-      LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        error: true,
-        logPrint: print,
-      ),
-    );
+    // Add logging interceptor ONLY in development mode
+    if (ApiConfig.isDev) {
+      _dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          error: true,
+          logPrint: print,
+        ),
+      );
+    }
   }
 
-  /// GET request
+  /// GET request with error classification
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -71,12 +73,12 @@ class DioClient {
         queryParameters: queryParameters,
         options: options,
       );
-    } catch (e) {
-      rethrow;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 
-  /// POST request
+  /// POST request with error classification
   Future<Response> post(
     String path, {
     dynamic data,
@@ -90,12 +92,12 @@ class DioClient {
         queryParameters: queryParameters,
         options: options,
       );
-    } catch (e) {
-      rethrow;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 
-  /// PUT request
+  /// PUT request with error classification
   Future<Response> put(
     String path, {
     dynamic data,
@@ -109,12 +111,12 @@ class DioClient {
         queryParameters: queryParameters,
         options: options,
       );
-    } catch (e) {
-      rethrow;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 
-  /// DELETE request
+  /// DELETE request with error classification
   Future<Response> delete(
     String path, {
     dynamic data,
@@ -128,12 +130,12 @@ class DioClient {
         queryParameters: queryParameters,
         options: options,
       );
-    } catch (e) {
-      rethrow;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 
-  /// PATCH request
+  /// PATCH request with error classification
   Future<Response> patch(
     String path, {
     dynamic data,
@@ -147,8 +149,53 @@ class DioClient {
         queryParameters: queryParameters,
         options: options,
       );
-    } catch (e) {
-      rethrow;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  /// Handle DioException and convert to user-friendly messages
+  Exception _handleDioError(DioException error) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return Exception('Connection timeout. Please check your internet connection and try again.');
+
+      case DioExceptionType.badResponse:
+        final statusCode = error.response?.statusCode;
+        final message = error.response?.data?['error'] ?? 'Request failed';
+
+        if (statusCode == 400) {
+          return Exception('Invalid request: $message');
+        } else if (statusCode == 401) {
+          return Exception('Authentication required. Please log in again.');
+        } else if (statusCode == 403) {
+          return Exception('Access denied: $message');
+        } else if (statusCode == 404) {
+          return Exception('Resource not found: $message');
+        } else if (statusCode == 422) {
+          return Exception('Validation error: $message');
+        } else if (statusCode != null && statusCode >= 500) {
+          return Exception('Server error. Please try again later.');
+        }
+        return Exception(message);
+
+      case DioExceptionType.cancel:
+        return Exception('Request was cancelled');
+
+      case DioExceptionType.connectionError:
+        return Exception('No internet connection. Please check your network settings.');
+
+      case DioExceptionType.badCertificate:
+        return Exception('Security certificate error. Please check your connection.');
+
+      case DioExceptionType.unknown:
+      default:
+        if (error.message?.contains('SocketException') ?? false) {
+          return Exception('No internet connection. Please check your network settings.');
+        }
+        return Exception('An unexpected error occurred. Please try again.');
     }
   }
 }

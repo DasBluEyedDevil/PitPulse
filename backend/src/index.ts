@@ -126,16 +126,36 @@ app.use('*', (req, res) => {
   res.status(404).json(response);
 });
 
-// Global error handler
-app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', error);
-  
+// Global error handler - catches ALL errors including async
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // Log error with stack trace in development
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Unhandled error:', error);
+    console.error('Stack:', error.stack);
+  } else {
+    // In production, log only essential info (integrate with proper logger)
+    console.error(`Error: ${error.message} | Path: ${req.path} | Method: ${req.method}`);
+  }
+
+  // Determine status code
+  const statusCode = error.statusCode || error.status || 500;
+
+  // Build response
   const response: ApiResponse = {
     success: false,
-    error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+    error: process.env.NODE_ENV === 'development'
+      ? error.message
+      : statusCode >= 500
+        ? 'Internal server error'
+        : error.message || 'Request failed',
   };
-  
-  res.status(500).json(response);
+
+  // Include stack trace only in development
+  if (process.env.NODE_ENV === 'development' && error.stack) {
+    (response as any).stack = error.stack;
+  }
+
+  res.status(statusCode).json(response);
 });
 
 // Start server

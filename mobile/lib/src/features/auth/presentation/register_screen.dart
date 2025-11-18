@@ -72,6 +72,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('Create Account'),
         leading: IconButton(
@@ -109,6 +110,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
                     labelText: 'Email *',
                     hintText: 'Enter your email',
@@ -117,10 +120,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   validator: Validators.email,
                 ),
                 const SizedBox(height: AppTheme.spacing16),
-                
+
                 // Username Field
                 TextFormField(
                   controller: _usernameController,
+                  keyboardType: TextInputType.text,
+                  autofillHints: const [AutofillHints.username],
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
                     labelText: 'Username *',
                     hintText: 'Choose a username',
@@ -129,10 +135,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   validator: Validators.username,
                 ),
                 const SizedBox(height: AppTheme.spacing16),
-                
+
                 // First Name Field
                 TextFormField(
                   controller: _firstNameController,
+                  keyboardType: TextInputType.name,
+                  autofillHints: const [AutofillHints.givenName],
+                  textInputAction: TextInputAction.next,
+                  textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
                     labelText: 'First Name',
                     hintText: 'Enter your first name',
@@ -140,10 +150,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: AppTheme.spacing16),
-                
+
                 // Last Name Field
                 TextFormField(
                   controller: _lastNameController,
+                  keyboardType: TextInputType.name,
+                  autofillHints: const [AutofillHints.familyName],
+                  textInputAction: TextInputAction.next,
+                  textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
                     labelText: 'Last Name',
                     hintText: 'Enter your last name',
@@ -151,11 +165,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: AppTheme.spacing16),
-                
+
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  autofillHints: const [AutofillHints.newPassword],
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: 'Password *',
                     hintText: 'Create a password',
@@ -179,6 +195,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
+                  autofillHints: const [AutofillHints.newPassword],
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _handleRegister(),
                   decoration: InputDecoration(
                     labelText: 'Confirm Password *',
                     hintText: 'Re-enter your password',
