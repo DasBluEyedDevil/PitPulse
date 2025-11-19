@@ -30,7 +30,7 @@ class ReviewRepository {
         queryParameters: queryParams,
       );
 
-      final List<dynamic> data = response.data;
+      final List<dynamic> data = response.data['data'] as List<dynamic>;
       return data.map((json) => Review.fromJson(json)).toList();
     } catch (e) {
       rethrow;
@@ -41,7 +41,8 @@ class ReviewRepository {
   Future<Review> getReviewById(String id) async {
     try {
       final response = await _dioClient.get('${ApiConfig.reviews}/$id');
-      return Review.fromJson(response.data);
+      final reviewData = response.data['data'] as Map<String, dynamic>;
+      return Review.fromJson(reviewData);
     } catch (e) {
       rethrow;
     }
@@ -54,7 +55,8 @@ class ReviewRepository {
         ApiConfig.reviews,
         data: request.toJson(),
       );
-      return Review.fromJson(response.data);
+      final reviewData = response.data['data'] as Map<String, dynamic>;
+      return Review.fromJson(reviewData);
     } catch (e) {
       rethrow;
     }
@@ -67,7 +69,8 @@ class ReviewRepository {
         '${ApiConfig.reviews}/$id',
         data: updates,
       );
-      return Review.fromJson(response.data);
+      final reviewData = response.data['data'] as Map<String, dynamic>;
+      return Review.fromJson(reviewData);
     } catch (e) {
       rethrow;
     }

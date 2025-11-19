@@ -11,7 +11,8 @@ class ProfileRepository {
   Future<UserStatistics> getUserStatistics() async {
     try {
       final response = await _dioClient.get('${ApiConfig.auth}/me/statistics');
-      return UserStatistics.fromJson(response.data);
+      final statisticsData = response.data['data'] as Map<String, dynamic>;
+      return UserStatistics.fromJson(statisticsData);
     } catch (e) {
       rethrow;
     }
@@ -27,7 +28,8 @@ class ProfileRepository {
         '${ApiConfig.auth}/me/profile-image',
         data: {'imagePath': filePath},
       );
-      return response.data['imageUrl'] as String;
+      final responseData = response.data['data'] as Map<String, dynamic>;
+      return responseData['imageUrl'] as String;
     } catch (e) {
       rethrow;
     }

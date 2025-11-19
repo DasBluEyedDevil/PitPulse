@@ -38,8 +38,10 @@ class VenueRepository {
         queryParameters: queryParams,
       );
 
-      final List<dynamic> data = response.data;
-      return data.map((json) => Venue.fromJson(json)).toList();
+      // API returns: { success: true, data: { venues: [...], total, page, totalPages } }
+      final responseData = response.data['data'] as Map<String, dynamic>;
+      final List<dynamic> venues = responseData['venues'] as List<dynamic>;
+      return venues.map((json) => Venue.fromJson(json)).toList();
     } catch (e) {
       rethrow;
     }
@@ -49,7 +51,9 @@ class VenueRepository {
   Future<Venue> getVenueById(String id) async {
     try {
       final response = await _dioClient.get('${ApiConfig.venues}/$id');
-      return Venue.fromJson(response.data);
+      // API returns: { success: true, data: { venue object } }
+      final venueData = response.data['data'] as Map<String, dynamic>;
+      return Venue.fromJson(venueData);
     } catch (e) {
       rethrow;
     }
@@ -63,8 +67,9 @@ class VenueRepository {
         queryParameters: {'limit': limit},
       );
 
-      final List<dynamic> data = response.data;
-      return data.map((json) => Venue.fromJson(json)).toList();
+      // API returns: { success: true, data: [...venues...] }
+      final List<dynamic> venues = response.data['data'] as List<dynamic>;
+      return venues.map((json) => Venue.fromJson(json)).toList();
     } catch (e) {
       rethrow;
     }
@@ -88,8 +93,9 @@ class VenueRepository {
         },
       );
 
-      final List<dynamic> data = response.data;
-      return data.map((json) => Venue.fromJson(json)).toList();
+      // API returns: { success: true, data: [...venues...] }
+      final List<dynamic> venues = response.data['data'] as List<dynamic>;
+      return venues.map((json) => Venue.fromJson(json)).toList();
     } catch (e) {
       rethrow;
     }
@@ -102,7 +108,9 @@ class VenueRepository {
         ApiConfig.venues,
         data: request.toJson(),
       );
-      return Venue.fromJson(response.data);
+      // API returns: { success: true, data: { venue object } }
+      final venueData = response.data['data'] as Map<String, dynamic>;
+      return Venue.fromJson(venueData);
     } catch (e) {
       rethrow;
     }
@@ -115,7 +123,9 @@ class VenueRepository {
         '${ApiConfig.venues}/$id',
         data: updates,
       );
-      return Venue.fromJson(response.data);
+      // API returns: { success: true, data: { venue object } }
+      final venueData = response.data['data'] as Map<String, dynamic>;
+      return Venue.fromJson(venueData);
     } catch (e) {
       rethrow;
     }
