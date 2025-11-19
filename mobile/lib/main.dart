@@ -4,15 +4,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/theme/theme_provider.dart';
 import 'src/core/router/app_router.dart';
+import 'src/core/services/crash_reporting_service.dart';
 
-void main() {
+void main() async {
+  // Ensure Flutter binding is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize crash reporting (Sentry)
+  await CrashReportingService.init();
+
   // Capture Flutter framework errors
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    // In production, send to crash reporting service (e.g., Sentry, Firebase Crashlytics)
-    // For now, just log to console
-    debugPrint('Flutter Error: ${details.exception}');
-    debugPrint('Stack trace: ${details.stack}');
+
+    // Send to crash reporting service
+    CrashReportingService.captureException(
+      details.exception,
+      details.stack,
+    );
   };
 
   // Capture async errors not caught by Flutter
@@ -25,9 +34,8 @@ void main() {
       );
     },
     (error, stackTrace) {
-      // In production, send to crash reporting service
-      debugPrint('Uncaught error: $error');
-      debugPrint('Stack trace: $stackTrace');
+      // Send to crash reporting service
+      CrashReportingService.captureException(error, stackTrace);
     },
   );
 }
