@@ -77,12 +77,19 @@ export class SetlistFmService {
   private client: AxiosInstance;
   private db = Database.getInstance();
   private apiKey: string;
+  private enabled: boolean;
 
   constructor() {
     this.apiKey = process.env.SETLISTFM_API_KEY || '';
+    this.enabled = !!this.apiKey;
 
-    if (!this.apiKey) {
-      throw new Error('SETLISTFM_API_KEY environment variable is required');
+    if (!this.enabled) {
+      console.warn('⚠️  SETLISTFM_API_KEY not configured - setlist.fm integration disabled');
+      // Create a dummy client to prevent errors
+      this.client = axios.create({
+        baseURL: 'https://api.setlist.fm/rest/1.0',
+      });
+      return;
     }
 
     this.client = axios.create({
@@ -104,6 +111,10 @@ export class SetlistFmService {
     countryCode?: string,
     page: number = 1
   ): Promise<SetlistFmVenue[]> {
+    if (!this.enabled) {
+      return [];
+    }
+
     try {
       const params: any = {
         p: page,
@@ -139,6 +150,10 @@ export class SetlistFmService {
     artistName: string,
     page: number = 1
   ): Promise<SetlistFmArtist[]> {
+    if (!this.enabled) {
+      return [];
+    }
+
     try {
       const response = await this.client.get<ArtistSearchResponse>('/search/artists', {
         params: {
@@ -166,6 +181,10 @@ export class SetlistFmService {
     year?: number;
     page?: number;
   }): Promise<SetlistFmSetlist[]> {
+    if (!this.enabled) {
+      return [];
+    }
+
     try {
       const params: any = {
         p: options.page || 1,
@@ -193,6 +212,10 @@ export class SetlistFmService {
    * Get a specific setlist by ID
    */
   async getSetlistById(setlistId: string): Promise<SetlistFmSetlist> {
+    if (!this.enabled) {
+      throw new Error('setlist.fm integration is disabled');
+    }
+
     try {
       const response = await this.client.get<SetlistFmSetlist>(
         `/setlist/${setlistId}`
@@ -210,6 +233,10 @@ export class SetlistFmService {
    * Returns the venue if already exists or creates new one
    */
   async importVenue(venueId: string): Promise<any> {
+    if (!this.enabled) {
+      throw new Error('setlist.fm integration is disabled');
+    }
+
     try {
       // Check if venue already exists
       const existingVenue = await this.db.query(

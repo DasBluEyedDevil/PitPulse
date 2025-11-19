@@ -39,12 +39,19 @@ export class FoursquareService {
   private client: AxiosInstance;
   private db = Database.getInstance();
   private apiKey: string;
+  private enabled: boolean;
 
   constructor() {
     this.apiKey = process.env.FOURSQUARE_API_KEY || '';
+    this.enabled = !!this.apiKey;
 
-    if (!this.apiKey) {
-      throw new Error('FOURSQUARE_API_KEY environment variable is required');
+    if (!this.enabled) {
+      console.warn('⚠️  FOURSQUARE_API_KEY not configured - Foursquare integration disabled');
+      // Create a dummy client to prevent errors
+      this.client = axios.create({
+        baseURL: 'https://places-api.foursquare.com',
+      });
+      return;
     }
 
     this.client = axios.create({
@@ -65,6 +72,10 @@ export class FoursquareService {
     location?: { lat: number; lng: number },
     limit: number = 20
   ): Promise<FoursquareVenueResult[]> {
+    if (!this.enabled) {
+      return [];
+    }
+
     try {
       const params: any = {
         query,
@@ -102,6 +113,10 @@ export class FoursquareService {
    * Get detailed venue information by Foursquare Place ID
    */
   async getVenueDetails(placeId: string): Promise<FoursquareVenueResult> {
+    if (!this.enabled) {
+      throw new Error('Foursquare integration is disabled');
+    }
+
     try {
       const response = await this.client.get<FoursquareVenueResult>(
         `/places/${placeId}`,
@@ -124,6 +139,10 @@ export class FoursquareService {
    * Returns the venue if already exists or creates new one
    */
   async importVenue(placeId: string): Promise<any> {
+    if (!this.enabled) {
+      throw new Error('Foursquare integration is disabled');
+    }
+
     try {
       // Check if venue already exists
       const existingVenue = await this.db.query(
@@ -210,6 +229,10 @@ export class FoursquareService {
     radius: number = 5000, // meters
     limit: number = 20
   ): Promise<FoursquareVenueResult[]> {
+    if (!this.enabled) {
+      return [];
+    }
+
     try {
       const response = await this.client.get<FoursquareSearchResponse>('/places/nearby', {
         params: {
