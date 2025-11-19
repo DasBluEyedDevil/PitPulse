@@ -34,7 +34,7 @@ class BandRepository {
         queryParameters: queryParams,
       );
 
-      final List<dynamic> data = response.data;
+      final List<dynamic> data = response.data['data'] as List<dynamic>;
       return data.map((json) => Band.fromJson(json)).toList();
     } catch (e) {
       rethrow;
@@ -45,7 +45,8 @@ class BandRepository {
   Future<Band> getBandById(String id) async {
     try {
       final response = await _dioClient.get('${ApiConfig.bands}/$id');
-      return Band.fromJson(response.data);
+      final bandData = response.data['data'] as Map<String, dynamic>;
+      return Band.fromJson(bandData);
     } catch (e) {
       rethrow;
     }
@@ -59,7 +60,7 @@ class BandRepository {
         queryParameters: {'limit': limit},
       );
 
-      final List<dynamic> data = response.data;
+      final List<dynamic> data = response.data['data'] as List<dynamic>;
       return data.map((json) => Band.fromJson(json)).toList();
     } catch (e) {
       rethrow;
@@ -74,7 +75,7 @@ class BandRepository {
         queryParameters: {'limit': limit},
       );
 
-      final List<dynamic> data = response.data;
+      final List<dynamic> data = response.data['data'] as List<dynamic>;
       return data.map((json) => Band.fromJson(json)).toList();
     } catch (e) {
       rethrow;
@@ -85,7 +86,7 @@ class BandRepository {
   Future<List<String>> getGenres() async {
     try {
       final response = await _dioClient.get('${ApiConfig.bands}/genres');
-      final List<dynamic> data = response.data;
+      final List<dynamic> data = response.data['data'] as List<dynamic>;
       return data.cast<String>();
     } catch (e) {
       rethrow;
@@ -99,7 +100,8 @@ class BandRepository {
         ApiConfig.bands,
         data: request.toJson(),
       );
-      return Band.fromJson(response.data);
+      final bandData = response.data['data'] as Map<String, dynamic>;
+      return Band.fromJson(bandData);
     } catch (e) {
       rethrow;
     }
@@ -112,7 +114,8 @@ class BandRepository {
         '${ApiConfig.bands}/$id',
         data: updates,
       );
-      return Band.fromJson(response.data);
+      final bandData = response.data['data'] as Map<String, dynamic>;
+      return Band.fromJson(bandData);
     } catch (e) {
       rethrow;
     }
